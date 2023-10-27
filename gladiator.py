@@ -2,7 +2,7 @@ import random
 
 cool_descriptors = ['swings their blade down on','lunges forward at','angles a precise strike at','roars in fury at']
 opponent_random_names = ['Gluteus Maximus','Jeffrey','Steve','Scarr','Mama Mildred','Maximus Decimus Meridius']
-showmanship = 0
+
 
 def attack():
     print('An attack just happened.')
@@ -31,7 +31,7 @@ class Gladiator:
     def gain_item(self,item):
         #item should be an instance of the Item class
         self.inventory.append(item.name)
-    def take_potion(self,potion):
+    def drink_potion(self):
         if 'potion' in self.inventory:
             self.inventory.remove('potion')
             potion.use_potion(self)
@@ -54,19 +54,17 @@ class Gladiator:
             print('{name} {description} {target}'.format(name = self.name, description = random.choice(cool_descriptors), target = target.name))
             attack = random.randint(1,10)
             damage = random.randint(1,10)
-        if attack == 9 or 10 and self.is_lucky:
-            print('{name} critically injured {target}!'.format(name = self.name, target = target.name))
-            showmanship += 1
-            damage += random.randint(1,10)
-        elif attack == 10:
-            print('{name} critically injured {target}!'.format(name = self.name, target = target.name))
-            showmanship += 1
-            damage += random.randint(1,10)
-        if attack >= target.armor:
-            print('{name} hit {target}!'.format(name = self.name, target = target.name))
-            target.lose_health((damage * self.atk) + self.soldier_bonus)
-        else:
-            print('{target} dodged {name}\'s attack!'.format(target = target.name, name = self.name))
+            if attack == 9 or 10 and self.is_lucky:
+                print('{name} critically injured {target}!'.format(name = self.name, target = target.name))
+                damage += random.randint(1,10)
+            elif attack == 10:
+                print('{name} critically injured {target}!'.format(name = self.name, target = target.name))
+                damage += random.randint(1,10)
+            if attack >= target.armor:
+                # print('{name} hit {target}!'.format(name = self.name, target = target.name))
+                target.lose_health((damage * self.atk) + self.soldier_bonus)
+            else:
+                print('{target} dodged {name}\'s attack!'.format(target = target.name, name = self.name))
 
 
 class Item:
@@ -131,27 +129,25 @@ class Profession:
 
 def combat_turns(player,opponent):
     #begins combat with a while loop, iterates through 12 asking for player input whenever their attack comes.
+    quick_attacks = 0
+    balanced_attacks = 0
     while player.hp > 0 and opponent.hp > 0:
-        for num in range(1,13):
-            turn = num
-            if turn % 2 == 0 and turn % 3 == 0 and turn % 4 == 0:
-                #would be replaced with gladiator.attack() based on weapon type
-                if player.speed
-                print(str(turn) + ' - Quick Attack')
-                print(str(turn) + ' - Balanced Attack')
-                print(str(turn) + ' - Heavy Attack')
-            elif turn % 2 ==0 and turn % 4 == 0:
-                print(str(turn) + ' - Quick Attack')
-                print(str(turn) + ' - Heavy Attack')
-            elif turn % 2 ==0 and turn % 3 ==0:
-                print(str(turn) + ' - Quick Attack')
-                print(str(turn) + ' - Balanced Attack')
-            elif turn % 2 ==0:
-                print(str(turn) + ' - Quick Attack')
-            elif turn % 3 ==0:
-                print(str(turn) + ' - Balanced Attack')
-            elif turn % 4 ==0:
-                print(str(turn) + ' - Heavy Attack')
+        for turn in range(1,13):
+            if turn % player.speed == 0 and opponent.hp > 0:
+                choice = input('The battle rages. Would you like to attack, parry, or use a potion? Please type attack, parry, or potion. ').lower()
+                if choice == 'attack':
+                    player.attack(opponent)
+                    quick_attacks += 1
+                elif choice == 'parry':
+                    pass
+                elif choice == 'potion':
+                    player.drink_potion()
+            if turn % opponent.speed == 0 and player.hp > 0:
+                opponent.attack(player)
+                balanced_attacks += 1
+    print('There were ' + str(quick_attacks) + ' quick attacks.')
+    print('There were ' + str(balanced_attacks) + ' balanced attacks.')
+    
 
 farmer = Profession('farmer')
 soldier = Profession('soldier')
@@ -178,3 +174,6 @@ print(opponent)
 print(player)
 
 combat_turns(player,opponent)
+
+print(opponent)
+print(player)
