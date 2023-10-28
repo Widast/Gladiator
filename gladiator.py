@@ -4,9 +4,6 @@ cool_descriptors = ['swings their blade down on','lunges forward at','angles a p
 opponent_random_names = ['Gluteus Maximus','Jeffrey','Steve','Scarr','Mama Mildred','Maximus Decimus Meridius']
 
 
-def attack():
-    print('An attack just happened.')
-
 class Gladiator:
     def __init__(self,name):
         self.name = name
@@ -15,12 +12,14 @@ class Gladiator:
         self.armor = 5 #target "roll" for a hit to meet
         self.defense = 1 #incoming damage reduction
         self.atk = 1 #outgoing damage multiplier
+        self.hit_chance = 0 #only specified so that guarding works by increasing hit chance when hit
         self.speed = 3 #when gladiator will act in the rounds iteration
         self.is_alive = True
         self.inventory = []
         self.profession = ''
         self.soldier_bonus = 0 #0 by default unless gladiator has the 'soldier' profession
         self.is_lucky = False
+        self.is_not_guarding = True
     def __repr__(self):
         return '''
     {name} is a gladiator who used to be a {profession}. 
@@ -49,22 +48,35 @@ class Gladiator:
             self.has_died()
         else:
             print('{name} took {amount} damage and now has {hp} health remaining.'.format(name = self.name, amount = rounded_amount, hp = self.hp))
+    def guard(self):
+        self.is_not_guarding = False
+        self.armor += 2
+        self.hit_chance += 2
     def attack(self,target):
         if self.is_alive == True:
             print('{name} {description} {target}'.format(name = self.name, description = random.choice(cool_descriptors), target = target.name))
             attack = random.randint(1,10)
             damage = random.randint(1,10)
-            if attack == 9 or 10 and self.is_lucky:
+            if (attack == 9 or attack == 10) and self.is_lucky:
                 print('{name} critically injured {target}!'.format(name = self.name, target = target.name))
                 damage += random.randint(1,10)
             elif attack == 10:
                 print('{name} critically injured {target}!'.format(name = self.name, target = target.name))
                 damage += random.randint(1,10)
-            if attack >= target.armor:
+            if (attack + self.hit_chance) >= target.armor:
                 # print('{name} hit {target}!'.format(name = self.name, target = target.name))
                 target.lose_health((damage * self.atk) + self.soldier_bonus)
             else:
                 print('{target} dodged {name}\'s attack!'.format(target = target.name, name = self.name))
+                missed = True
+        #attacking will 'use up' your guard, so when self attacks target they will make them lose their guard benefits after it resolves
+        #if target wasn't guarding, these values would be set to these defaults anyway
+            if not target.is_not_guarding and missed:
+                target.attack(self)
+                target.hit_chance = 0
+        target.is_not_guarding = True
+        target.armor = 5
+
 
 
 class Item:
@@ -74,7 +86,11 @@ class Item:
         #self.type should equal 'item', 'armor', or 'weapon'
     def use_potion(self,target):
         if self.type == 'potion':
-            target.hp += 10
+            heal_amount = target.hp + 10
+            if heal_amount > target.maxhp:
+                target.hp = target.maxhp
+            else:
+                target.hp = heal_amount
             print('{name} swigged a potion in the heat of battle. They gained 10 health and now have {hp} health remaining'.format(name = target.name, hp = target.hp))
     def equip_armor(self,armor,target):
         #armor variable should equal 'light', 'medium', or 'heavy'; changes target.defense to a specified integer to divide damage by
@@ -128,23 +144,49 @@ class Profession:
             target.is_lucky = True
 
 def combat_turns(player,opponent):
-    #begins combat with a while loop, iterates through 12 asking for player input whenever their attack comes.
+    #begins combat with a while loop, iterates through 12 asking for player input whenever turn variable == a multiple of their speed attribute.
     quick_attacks = 0
     balanced_attacks = 0
+    opponent_turns = ['attack','guard','potion']
+    both_alive = opponent.hp > 0 and player.hp > 0
     while player.hp > 0 and opponent.hp > 0:
         for turn in range(1,13):
-            if turn % player.speed == 0 and opponent.hp > 0:
-                choice = input('The battle rages. Would you like to attack, parry, or use a potion? Please type attack, parry, or potion. ').lower()
+            if not both_alive:
+                break
+            elif turn % player.speed == 0 and player.is_not_guarding:
+                choice = input('The battle rages. Would you like to attack, guard, or use a potion? Please type attack, guard, or potion. ').lower()
+                if choice == 'potion':
+                    if 'potion' not in player.inventory:
+                        choice = input('You have no potions in your inventory. Please enter attack or guard: ')
+                    else:
+                        player.drink_potion()
                 if choice == 'attack':
                     player.attack(opponent)
                     quick_attacks += 1
-                elif choice == 'parry':
-                    pass
-                elif choice == 'potion':
-                    player.drink_potion()
-            if turn % opponent.speed == 0 and player.hp > 0:
-                opponent.attack(player)
-                balanced_attacks += 1
+                if choice == 'guard':
+                    player.guard()
+            elif not player.is_not_guarding:
+                print('{name} has their guard up and is waiting to attack.'.format(name = player.name))
+            if not both_alive:
+                break
+            elif turn % opponent.speed == 0 and opponent.is_not_guarding:
+                opponent_choice = random.choice(opponent_turns)
+                # check to see if player is guarding, opponent cannot guard if player is guarding or we hit an infinite loop of waiting
+                if opponent_choice == 'potion':
+                    if 'potion' not in opponent.inventory:
+                        opponent_choice = random.choice(['attack','guard'])
+                    else:
+                        opponent.drink_potion()
+                if not player.is_not_guarding:
+                    opponent_choice = 'attack'
+                if opponent_choice == 'attack':
+                    opponent.attack(player)
+                    balanced_attacks += 1
+                    quick_attacks += 1
+                if opponent_choice == 'guard':
+                    opponent.guard()
+            elif not opponent.is_not_guarding:
+                print('{name} had their guard up and is waiting to attack.'.format(name = opponent.name))
     print('There were ' + str(quick_attacks) + ' quick attacks.')
     print('There were ' + str(balanced_attacks) + ' balanced attacks.')
     
@@ -155,6 +197,7 @@ merchant = Profession('merchant')
 armor = Item('armor','armor')
 spear = Item('weapon','spear')
 shortsword = Item('weapon','shortsword')
+greataxe = Item('weapon''greataxe')
 potion = Item('potion','potion')
 
 
@@ -164,7 +207,7 @@ spear.equip_weapon('balanced',opponent)
 armor.equip_armor('medium',opponent)
 opponent.gain_item(potion)
 
-player = Gladiator('Dalton')
+player = Gladiator(input('What\'s your name? '))
 soldier.past_profession(player)
 shortsword.equip_weapon('quick',player)
 armor.equip_armor('light',player)
