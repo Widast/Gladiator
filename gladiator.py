@@ -2,6 +2,19 @@ import random
 
 cool_descriptors = ['swings their blade down on','lunges forward at','angles a precise strike at','roars in fury at']
 opponent_random_names = ['Gluteus Maximus','Jeffrey','Steve','Scarr','Mama Mildred','Maximus Decimus Meridius']
+line_break = '______________________________________________________________________________________________________'
+swirly_line = '````````````````````````````````````````````````````````````'
+gladiator_title ="""
+     _,---.              ,---.                    .=-.-.  ,---.   ,--.--------.   _,.---._                 
+  _.='.'-,  \   _.-.    .--.'  \      _,..---._  /==/_ /.--.'  \ /==/,  -   , -\,-.' , -  `.   .-.,.---.   
+ /==.'-     / .-,.'|    \==\-/\ \   /==/,   -  \|==|, | \==\-/\ \\==\.-.  - ,-./==/_,  ,  - \ /==/  `   \  
+/==/ -   .-' |==|, |    /==/-|_\ |  |==|   _   _\==|  | /==/-|_\ |`--`\==\- \ |==|   .=.     |==|-, .=., | 
+|==|_   /_,-.|==|- |    \==\,   - \ |==|  .=.   |==|- | \==\,   - \    \==\_ \|==|_ :   ;=:- |==|   '='  / 
+|==|  , \_.' )==|, |    /==/ -   ,| |==|,|   | -|==| ,| /==/ -   ,|    |==|- ||==| , '='     |==|- ,   .'  
+\==\-  ,    (|==|- `-._/==/-  /\ - \|==|  '='   /==|- |/==/-  /\ - \   |==|, | \==\ -    ,_ /|==|_  . ,'.  
+ /==/ _  ,  //==/ - , ,|==\ _.\=\.-'|==|-,   _`//==/. /\==\ _.\=\.-'   /==/ -/  '.='. -   .' /==/  /\ ,  ) 
+ `--`------' `--`-----' `--`        `-.`.____.' `--`-`  `--`           `--`--`    `--`--''   `--`-`--`--'  
+"""
 
 
 class Gladiator:
@@ -66,16 +79,19 @@ class Gladiator:
             if (attack + self.hit_chance) >= target.armor:
                 # print('{name} hit {target}!'.format(name = self.name, target = target.name))
                 target.lose_health((damage * self.atk) + self.soldier_bonus)
+                missed = False
             else:
                 print('{target} dodged {name}\'s attack!'.format(target = target.name, name = self.name))
                 missed = True
         #attacking will 'use up' your guard, so when self attacks target they will make them lose their guard benefits after it resolves
         #if target wasn't guarding, these values would be set to these defaults anyway
             if not target.is_not_guarding and missed:
+
                 target.attack(self)
                 target.hit_chance = 0
         target.is_not_guarding = True
         target.armor = 5
+        target.hit_chance = 0
 
 
 
@@ -151,10 +167,13 @@ def combat_turns(player,opponent):
     both_alive = opponent.hp > 0 and player.hp > 0
     while player.hp > 0 and opponent.hp > 0:
         for turn in range(1,13):
+            print('______________________________________________________________')
             if not both_alive:
                 break
             elif turn % player.speed == 0 and player.is_not_guarding:
                 choice = input('The battle rages. Would you like to attack, guard, or use a potion? Please type attack, guard, or potion. ').lower()
+                while choice not in ['attack','guard','potion']:
+                    choice = input('It looks like you chose something else. Please enter attack, guard, or potion and press enter: ')
                 if choice == 'potion':
                     if 'potion' not in player.inventory:
                         choice = input('You have no potions in your inventory. Please enter attack or guard: ')
@@ -175,6 +194,8 @@ def combat_turns(player,opponent):
                 if opponent_choice == 'potion':
                     if 'potion' not in opponent.inventory:
                         opponent_choice = random.choice(['attack','guard'])
+                    elif (opponent.hp > (opponent.maxhp - 10)):
+                        opponent_choice = random.choice(['attack','guard'])
                     else:
                         opponent.drink_potion()
                 if not player.is_not_guarding:
@@ -186,9 +207,16 @@ def combat_turns(player,opponent):
                 if opponent_choice == 'guard':
                     opponent.guard()
             elif not opponent.is_not_guarding:
-                print('{name} had their guard up and is waiting to attack.'.format(name = opponent.name))
+                print('{name} has their guard up and is waiting to attack.'.format(name = opponent.name))
     print('There were ' + str(quick_attacks) + ' quick attacks.')
     print('There were ' + str(balanced_attacks) + ' balanced attacks.')
+
+def title_screen():
+    print(line_break)
+    print(gladiator_title)
+    print('WELCOME TO THE ARENA')
+    print('DO YOU HAVE WHAT IT TAKE TO BE THE CHAMPION?')
+    print(line_break)
     
 
 farmer = Profession('farmer')
@@ -197,11 +225,13 @@ merchant = Profession('merchant')
 armor = Item('armor','armor')
 spear = Item('weapon','spear')
 shortsword = Item('weapon','shortsword')
-greataxe = Item('weapon''greataxe')
+greataxe = Item('weapon','greataxe')
 potion = Item('potion','potion')
 
+title_screen()
 
-opponent = Gladiator('Bot')
+
+opponent = Gladiator(random.choice(opponent_random_names))
 farmer.past_profession(opponent)
 spear.equip_weapon('balanced',opponent)
 armor.equip_armor('medium',opponent)
