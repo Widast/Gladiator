@@ -341,10 +341,9 @@ After the crowd\'s cheers die down slightly with the rising tension, the announc
 '''.format(NAME = player.name.upper(), OPPONENT = opponent.name.upper()))
     print(swirly_line)    
 
-def post_fight(player,counter):
+def post_fight(player,fight_counter):
     if player.is_alive:
         player.hp = player.maxhp
-        fight_counter += 1
         if fight_counter == 1:
             print('\nYou have defeated your first opponent and are one step closer to become Champion of The Arena.')
             print('Your next challenge begins now...\n')
@@ -361,7 +360,6 @@ Please input absolutely whatever you want:
     else:
         input('Thank you so much for playing! If you\'re feeling luck, try playing again.')
         exit()
-    return fight_counter
 
 # instantiating default objects like professions and items.
 farmer = Profession('farmer')
@@ -389,6 +387,10 @@ title_screen()
 player_gladiator = Gladiator('')
 character_creation()
 
+player_gladiator.soldier_bonus = 30
+player_gladiator.maxhp += 30
+player_gladiator.hit_chance = 20
+
 fight_counter = 0
 #introduce and fight opponent 1
 opponent_intro(player_gladiator,opponent1)
@@ -396,6 +398,7 @@ opponent_intro(player_gladiator,opponent1)
 combat_turns(player_gladiator,opponent1)
 
 #check to see if game should exit()
+fight_counter += 1
 post_fight(player_gladiator,fight_counter)
 
 #introduce and fight opponent 2
@@ -404,6 +407,7 @@ opponent_intro(player_gladiator,opponent2)
 combat_turns(player_gladiator,opponent2)
 
 #check to see if game should exit()
+fight_counter += 1
 post_fight(player_gladiator,fight_counter)
 
 #introduce and fight opponent 3
@@ -412,4 +416,5 @@ opponent_intro(player_gladiator,opponent3)
 combat_turns(player_gladiator,opponent3)
 
 #check to see if game should exit()
+fight_counter += 1
 post_fight(player_gladiator,fight_counter)
