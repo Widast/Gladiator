@@ -1,7 +1,6 @@
 import random
 
 cool_descriptors = ['swings their blade down on','lunges forward at','angles a precise strike at','roars in fury at']
-opponent_random_names = ['Gluteus Maximus','Jeffrey','Steve','Scarr','Mama Mildred','Maximus Decimus Meridius']
 line_break = '______________________________________________________________________________________________________\n'
 swirly_line = '`````````````````````````````````````````````````````````````````````````````````````````````````````'
 gladiator_title ="""
@@ -50,26 +49,30 @@ class Gladiator:
     def has_died(self):
         self.is_alive = False
         if self.hp <= 0:
-            print('{name} has died.'.format(name = self.name))
+            print('\n{name} has died.'.format(name = self.name))
     def lose_health(self,amount):
         rounded_amount = round(amount/self.defense)
         if rounded_amount == 0:
             rounded_amount += 1
         self.hp -= rounded_amount
         if self.hp <= 0:
-            print('{name} took {amount} damage and now has {hp} health remaining.'.format(name = self.name, amount = rounded_amount, hp = self.hp))
             self.hp = 0
+            print('{name} took {amount} damage and now has {hp} health remaining.'.format(name = self.name, amount = rounded_amount, hp = self.hp))
             self.has_died()
         else:
             print('{name} took {amount} damage and now has {hp} health remaining.'.format(name = self.name, amount = rounded_amount, hp = self.hp))
     def guard(self):
-        print('{name} assumes a defense stance, waiting for a chance to strike'.format(name = self.name))
+        print('{name} assumes a defense stance, waiting for a chance to strike.'.format(name = self.name))
         self.is_not_guarding = False
         self.armor += 2
         self.hit_chance += 2
+    def lose_guard(self):
+        self.is_not_guarding = True
+        self.armor = 5
+        self.hit_chance = 0
     def attack(self,target):
         if self.is_alive == True:
-            print('{name} {description} {target}'.format(name = self.name, description = random.choice(cool_descriptors), target = target.name))
+            print('{name} {description} {target}...'.format(name = self.name, description = random.choice(cool_descriptors), target = target.name))
             attack = random.randint(1,10)
             damage = random.randint(1,10)
             if (attack == 9 or attack == 10) and self.is_lucky:
@@ -81,23 +84,20 @@ class Gladiator:
             if (attack + self.hit_chance) >= target.armor:
                 missed = False
                 if not target.is_not_guarding and not missed:
-                    print('{self} broke through {target}\'s guard!'.format(self = self.name, target = target.name))
+                    print('{target}\'s guard is broken!'.format(target = target.name))
                 # print('{name} hit {target}!'.format(name = self.name, target = target.name))
                 target.lose_health((damage * self.atk) + self.soldier_bonus)
-            
             else:
                 print('{target} dodged {name}\'s attack!'.format(target = target.name, name = self.name))
                 missed = True
+            self.lose_guard()
         #attacking will 'use up' your guard, so when self attacks target they will make them lose their guard benefits after it resolves
         #if target wasn't guarding, these values would be set to these defaults anyway
             if not target.is_not_guarding and missed:
-                print('{target} parries {self}\'s weapon and launches a counterattack!'.format(target = target.name, self = self.name))
+                print('\n{target} parries {self}\'s weapon and launches a counterattack!'.format(target = target.name, self = self.name))
                 target.attack(self)
-                print(line_break)
-                target.hit_chance = 0
-        target.is_not_guarding = True
-        target.armor = 5
-        target.hit_chance = 0
+                target.lose_guard()
+            target.lose_guard()
 
 class Item:
     def __init__(self,type,name):
@@ -166,15 +166,17 @@ def combat_turns(player,opponent):
     #begins combat with a while loop, iterates through 12 asking for player input whenever turn variable == a multiple of their speed attribute.
     if 'potion' not in player.inventory:
         player.gain_item(potion)
+
     if 'potion' not in opponent.inventory:
         opponent.gain_item(potion)
+
     opponent_turns = ['attack','guard','potion']
-    both_alive = opponent.is_alive and player.is_alive
     while player.hp > 0 and opponent.hp > 0:
+        both_alive = opponent.is_alive and player.is_alive
         for turn in range(1,13):
-            if turn % player.speed == 0 and player.is_not_guarding:
-                if not player.is_alive:
-                    break
+            if not both_alive:
+                break
+            if (turn % player.speed == 0 and player.is_not_guarding) and player.is_alive:
                 choice = input('The battle rages. Would you like to attack, guard, or use a potion? Please type attack, guard, or potion. \n').lower()
                 while choice not in ['attack','guard','potion']:
                     choice = input('It looks like you chose something else. Please enter attack, guard, or potion and press enter: ').lower()
@@ -188,12 +190,12 @@ def combat_turns(player,opponent):
                 if choice == 'guard':
                     player.guard()
                 print(line_break)
-            elif turn % player.speed == 0 and not player.is_not_guarding:
-                print('{name} has their guard up and is waiting to attack.'.format(name = player.name))
-                print(line_break)
-            if turn % opponent.speed == 0 and opponent.is_not_guarding:
-                if not opponent.is_alive:
-                    break
+            #elif turn % player.speed == 0 and not player.is_not_guarding:
+                #print('{name} has their guard up and is waiting to attack.'.format(name = player.name))
+                #print(line_break)
+            if not both_alive:
+                break
+            if (turn % opponent.speed == 0 and opponent.is_not_guarding) and opponent.is_alive:
                 opponent_choice = random.choice(opponent_turns)
                 if opponent_choice == 'potion':
                     if 'potion' not in opponent.inventory:
@@ -207,18 +209,21 @@ def combat_turns(player,opponent):
                     opponent_choice = 'attack'
                 if opponent_choice == 'attack':
                     opponent.attack(player)
-                    opponent.is_not_guarding = True
-                    opponent.hit_chance = 0
-                    opponent.armor = 5
                 if opponent_choice == 'guard':
                     opponent.guard()
                 print(line_break)
+
             elif turn % opponent.speed and not opponent.is_not_guarding:
                 if not player.is_not_guarding:
                     opponent.attack(player)
-                else:
-                    print('{name} has their guard up and is waiting to attack.'.format(name = opponent.name))
-                print(line_break)
+                    print(line_break)
+               # else:
+               #    print('{name} has their guard up and is waiting to attack.'.format(name = opponent.name))
+               # print(line_break)
+    if player.is_alive:
+        print('\nYou are victorious! The crowd is lost in excitement and you live to fight another day.')
+    else:
+        print('\nIt was a valiant effort, but your time in the arena has come to an end. GAME OVER')
 
 def title_screen():
     print(line_break)
@@ -300,9 +305,65 @@ Choose {name}\'s armor:
     print(line_break)
     return player_gladiator
 
+def opponent_creation(opponent):
+    # set opponent's name
+    opponent_random_names = ['Gluteus Maximus','Jeffrey','Steve','Scarr','Mama Mildred','Maximus Decimus Meridius','The Dread Gladiator Roberticus','Xena','Stacy']
+    opponent.name = random.choice(opponent_random_names)
+    opponent_random_names.remove(opponent.name)
+    # set opponent's profession
+    opponent_profession_choice = random.choice(['farmer','soldier','merchant'])
+    opponent_profession = Profession(opponent_profession_choice)
+    opponent_profession.past_profession(opponent)
+    # set opponent's weapon
+    opponent_weapon_choice = random.choice(['shortsword','spear','greataxe'])
+    opponent_weapon = Item('weapon',opponent_weapon_choice)
+    opponent_weapon.equip_weapon(opponent)
+    # set opponent's armor
+    opponent_armor_choice = random.choice(['light','medium','heavy'])
+    opponent_armor = Item('armor',opponent_armor_choice)
+    opponent_armor.equip_armor(opponent)
+    return opponent
 
-    
+def opponent_intro(player,opponent):
+    print(swirly_line)
+    print('The iron gates open before you. The cheers of the crowd thrum in your ears and anticipation of battle sets your heart to racing.')
+    print('''
+The announcer motions towards you and bellows, "OUR CHALLENGER FOR THE TITLE OF CHAMPION, {NAME}!!"
+          
+On the opposite end of the walled in arena, the portcullis opens to reveal your opponent.
+          
+The announcer\'s hand moves to the opposite end and they shout, "OUR DEFENDING FIGHTER, {OPPONENT}!!!"
+          
+After the crowd\'s cheers die down slightly with the rising tension, the announcer brings their fist down and yells,
+          
+                                                FIGHT!
+          
+'''.format(NAME = player.name.upper(), OPPONENT = opponent.name.upper()))
+    print(swirly_line)    
 
+def post_fight(player,counter):
+    if player.is_alive:
+        player.hp = player.maxhp
+        fight_counter += 1
+        if fight_counter == 1:
+            print('\nYou have defeated your first opponent and are one step closer to become Champion of The Arena.')
+            print('Your next challenge begins now...\n')
+        elif fight_counter == 2:
+            print('\nYou\'ve done it! Only one more challenger stands in your way.  Prepare yourself for your final fight.\n')
+        elif fight_counter == 3:
+            input('''
+You are a warrior unlike any The Arena has ever seen, you are its Champion!! {name} has cemented themselves in the annals of history.
+              
+Thank you so much for playing my barebones and over-complicated-yet-painfully-simple game! 
+Please input absolutely whatever you want: 
+'''.format(name = player.name))
+            exit()
+    else:
+        input('Thank you so much for playing! If you\'re feeling luck, try playing again.')
+        exit()
+    return fight_counter
+
+# instantiating default objects like professions and items.
 farmer = Profession('farmer')
 soldier = Profession('soldier')
 merchant = Profession('merchant')
@@ -312,28 +373,43 @@ shortsword = Item('weapon','shortsword')
 greataxe = Item('weapon','greataxe')
 potion = Item('potion','potion')
 
-player_gladiator = Gladiator('')
 
+#create 3 opponents
+opponent1 = Gladiator('')
+opponent_creation(opponent1)
+opponent2 = Gladiator('')
+opponent_creation(opponent2)
+opponent3 = Gladiator('')
+opponent_creation(opponent3)
+
+#begin game
 title_screen()
+
+#create player
+player_gladiator = Gladiator('')
 character_creation()
 
+fight_counter = 0
+#introduce and fight opponent 1
+opponent_intro(player_gladiator,opponent1)
 
-opponent = Gladiator(random.choice(opponent_random_names))
-farmer.past_profession(opponent)
-spear.equip_weapon(opponent)
-medium_armor.equip_armor(opponent)
-opponent.gain_item(potion)
+combat_turns(player_gladiator,opponent1)
 
-'''player = Gladiator(input('What\'s your name? '))
-soldier.past_profession(player)
-shortsword.equip_weapon('quick',player)
-armor.equip_armor('light',player)
-player.gain_item(potion)'''
+#check to see if game should exit()
+post_fight(player_gladiator,fight_counter)
 
-print(opponent)
-print(player_gladiator)
+#introduce and fight opponent 2
+opponent_intro(player_gladiator,opponent2)
 
-combat_turns(player_gladiator,opponent)
+combat_turns(player_gladiator,opponent2)
 
-print(opponent)
-print(player_gladiator)
+#check to see if game should exit()
+post_fight(player_gladiator,fight_counter)
+
+#introduce and fight opponent 3
+opponent_intro(player_gladiator,opponent3)
+
+combat_turns(player_gladiator,opponent3)
+
+#check to see if game should exit()
+post_fight(player_gladiator,fight_counter)
