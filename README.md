@@ -1,6 +1,6 @@
 # Gladiator
 This is a quick little turn-based game made for the Codecademy Python Terminal Game project.  
-The user will create a gladiator by giving them a name, picking their past profession, equiping them with a weapona and armor, and then pitting them against 3 opponents.
+The user will create a gladiator by giving them a name, picking their past profession, equiping them with a weapon and armor, and then pitting them against 3 opponents.
 Different choices give different bonuses or penalties (except their name, of course).
 
 The SPEED stat dictates when you take turns in the fight. A lower number is quicker, a higher number is slower. For example, a gladiator with 2 speed will go twice in the
