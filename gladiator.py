@@ -387,10 +387,6 @@ title_screen()
 player_gladiator = Gladiator('')
 character_creation()
 
-player_gladiator.soldier_bonus = 30
-player_gladiator.maxhp += 30
-player_gladiator.hit_chance = 20
-
 fight_counter = 0
 #introduce and fight opponent 1
 opponent_intro(player_gladiator,opponent1)
